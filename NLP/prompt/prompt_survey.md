@@ -41,6 +41,17 @@
       - [Sample Order](#sample-order)
     - [Prompt Composition](#prompt-composition)
     - [Prompt Decomposition](#prompt-decomposition)
+  - [Training Strategies for Prompting Methods](#training-strategies-for-prompting-methods)
+    - [Parameter Update Methods](#parameter-update-methods)
+  - [Application](#application)
+    - [Knowledge Probing 知识探索](#knowledge-probing-知识探索)
+    - [Classification-based Tasks](#classification-based-tasks)
+    - [Information Extraction](#information-extraction)
+    - ["Reasoning" in NLP](#reasoning-in-nlp)
+    - [Question Answering](#question-answering)
+    - [Text Generation](#text-generation)
+    - [Automatic Evaluation of Text Generation](#automatic-evaluation-of-text-generation)
+    - [Multi-modal Learning](#multi-modal-learning)
 # Pre-train, Prompt, and Predict: A Systematic Survey of Prompting Methods in Natural Language Processing
 
 ## NLP的两大巨变
@@ -168,7 +179,7 @@ Left-to-Right Language Model(L2R LMs) 是一种autoregressive自回归模型，�
 这个预测或者概率的计算，一般通过链式法则从左到右进行逐步计算即：*P(x)=P(x1)XP(x2|x1)...XP(xn|x1,x2...xn-1)* 即从x1开始不断计算条件概率，最终计算n个token结束  
 类似地，right-to-left的计算表达式就是*P(xi|xi+1,xi+2...xn)*通过i+1...到n的信息，计算当前位置i的概率  
 **典型模型：**  
-GPT-3, GPT-Neo
+GPT-3, GPT-Neo  
 **应用场景：**  
 L2R方法常常是prompt的核心网络。这样做的一个实际的原因是一般L2R网络都非常庞大，耗费大量资源和财力；所以这种在pre-train fine-tune模式似乎并不可能  
 **总结而言：**  
@@ -180,7 +191,7 @@ L2R在对于输入text x的方法中，使用的是diagonal对角线mask方法�
 这样就有了双向的language model，其中具有代表性的就是masked language model，其用来根据上下文的信息，去预测masked tokens  
 即*P(xi|x1,x2...xi-1,xi+1,...xn)*根据除了xi以外的上下文信息，计算xi的条件概率分布  
 **典型模型：**  
-BERT, ERNIE
+BERT, ERNIE  
 **应用场景：**  
 在prompt的场景中，MLM最适合用在自然语义理解或分析任务，如：文本分类，自然语言推理和抽取式的问答任务；  
 究其原因，应该是这些任务往往比较适合于改造成完形填空cloze的任务，这样和MLM的训练方式如出一辙；  
@@ -364,4 +375,103 @@ answer的shape就是它的粒度，就是回答的表示形式，主要有三种
 解决的方法是将整个prompt分解为不同的sub-prompts 之后分别对sub-prompt进行回答  
 ![PD](img/PD.png)  
 
-##
+## Training Strategies for Prompting Methods
+研究与prompting methods一致的显式模型训练方法  
+![chapter7](img/chapter7.png)  
+**大多数情况下，prompting methods在没有对下游任务有任何显式训练的情况下，就可以使用；只需要将下游任务迎合到适合的LM上，使用cloze或prefix prompts的方法即可**  
+**这被成为zero-shot setting，因为对下游任务没有任何额外数据。**  
+但是，也有一些方法使用训练数据与提示方法一起训练模型。包括full-data learning(有大量数据进行训练) 和 few-shot learning(使用少量的样本进行训练)  
+**prompt methods在小样本学习上很有用，因为通常是没有足够的训练实例来训练**  
+
+### Parameter Update Methods
+**在基于prompt的下游任务中，通常由两类参数：pre-trained models的参数和prompts的参数 哪部分的参数应该更新时非常重要的，这会导致不同场景下有不同的适用性。**  
+可以按照三个方面进行讨论：
+1. 底层的LM参数是否被调整；
+2. 是否有额外的prompt-related 参数；
+3. 如果有额外的prompt-related 参数，它们是否会被调整
+
+![PUM](img/PUM.png)  
+1. Promptless Fine-tuning 无提示的fine-tuning方法  
+在prompt流行之前 pre-train fine-tune模式就已经在NLP领域十分流行  
+预训练模型LM的全部或部分参数，会根据下游任务的样本进行更新  
+**样例： BERT RoBERTa等**  
+这是简单、强大且广泛使用的方法，但是可能在小数据集上发生或拟合或灾难性遗忘(LM失去了微调之前的能力)  
+**优点：简单、无需prompt、修改LM的所有参数可以让模型适合大数据集；**  
+**缺点：在小型数据集上可能会过拟合或者不稳定**  
+
+2. Tuning-free Prompting  
+Tuning-free的方法不修改pre-trained LM的参数，仅仅基于prompt直接生成answer  
+可以通过上一章的方法，增加input，这种tuning-free prompting和prompt augmentation又被称为in-context learning  
+**样例：LAMA GPT3等**  
+**优点：高效，没有参数更新，不会产生遗忘(因为LM的参数固定) 可以使用在zero-shot setting中**  
+**缺点：因为prompts是进行任务的唯一方法，那么需要大量的工程来实现高精度；特别是在in-context learning中，提供很多answered prompts会耗费大量时间**  
+
+3. Fixed-LM Prompt Tuning  
+在引入了prompt-relevant parameters的任务中，将LM的参数固定不变，仅仅通过下游任务的数据，对prompts的参数进行调整  
+**样例：Prefix-Tuning WARP**  
+**优点：类似于tuning-free prompting，可以保留LM的内容，适用于小样本场景，而且通常比tuning-free的效果好一些**  
+**缺点：无法在零样本场景中使用，虽然在小样本场景中有效，但表达能力有限。通常还需要调整超参数和seed prompts。prompts往往不是人类可解释或可操作的。**  
+
+4. Fixed-prompt LM Tuning  
+fixed-prompt LM tuning方法是按照pre-train fine-tune范式一样，对LM的参数进行更新，同时加入固定参数的prompt进行指定模型行为。  
+最自然的方法是提供一个离线的文本模板，应用在每个训练和测试用例上。  
+**样例：PET-TC PET-Gen LM-BFF**  
+**优点：prompt engineering或者answer engineering全面指定任务，允许更有效地学习**  
+**缺点：需要prompt engineering或者answer engineering。对一项下游任务微调的LM可能对另一个任务毫无作用。**  
+
+5. prompt + LM Tuning  
+在这种场景中，prompt-relevant parameters和LM的参数可以一起微调。  
+样例：PADA P-Tuning  
+优点：最具表现力的方法，适用于high-data setting  
+缺点：需要训练和存储模型的所有参数，可能在小数据集上过拟合  
+
+## Application
+prompt learning的应用  
+### Knowledge Probing 知识探索
+**Factual Probing 事实探查(a.k.a fact retrieval事实检索)**是最早使用prompt的场景之一  
+探索这项任务的动机是量化预训练的LM的内部表征包含的事实知识  
+**预训练模型的参数通常是固定的，通过将原始输入转换为完形填空来检索知识，完形填空的prompt可以手动制作或自动生成**  
+相关数据集包括LAMA和X-FACTR等。由于答案是pre-defined，事实检索任务只关注与找到有效的模板，并根据这些模板分析不同的结果  
+**Linguistic Probing 语言探索**  
+大规模的pre-training允许LM处理语言现象，例如类比，否定，语义相似性，稀有词理解等  
+### Classification-based Tasks
+基于prompt的分类任务十分广泛，在这类任务中，prompt templates提示模板相对容易地构造  
+基于分类任务的关键是制定合适的提示，例如使用"the topic of this document is [Z]" 之后使用pre-trained LM进行填空  
+**Text Classification 文本分类**  
+对于文本分类任务，大多数都使用完形填空方法，同时使用prompt engineering和answer engineering  
+当前的研究点都是在fixed-prompt LM Tuning的策略下，探索小样本分类fine-tune的效果  
+**Natural Language Inference(NLI) 自然语言推理**  
+自然语言推理进行预测两个指定句子之间的关系(如蕴含关系)  
+通常使用完形填空方法，关于prompt engineering，研究员要关注小样本环境下的模板探索 answer space Z通常是手动选定的  
+
+### Information Extraction
+信息抽取不同于一般分类任务，其需要很多技巧去构造prompts  
+**Relation Extraction 关系提取**  
+关系提取是预测两个实体之间的关系的任务  
+**Semantic Parsing 语义分析**
+语义分析是在给定自然语言输入的情况下生成结构化含义的任务  
+**Named Entity Recognition 命名实体识别**  
+命名实体识别是识别给定句子的命名实体(person, name, location)的任务  
+
+### "Reasoning" in NLP
+**Commonsense Reasoning 常识推理**  
+The trophy doesn’t fit into the brown suitcase because it is too large  
+对于模型来说，就是要分辨it代指哪个物体  
+**Mathematical Reasoning 数学推理**
+f(x) = x * x what is f(f(3))  
+类似的任务  
+
+### Question Answering
+QA 问答任务是给定输入问题，给出回答，通常是基于上下文文档的。  
+QA可以采用多种形式，如抽取式QA(答案在文本中) 选择型QA(从数个选项中进行选择) 自由形式QA(模型可以返回任意文本字符)  
+
+### Text Generation
+文本生成是涉及生成性文本你的一系列任务，通常以其他一些信息为条件，使用前缀提示和自回归的云训练模型做  
+
+### Automatic Evaluation of Text Generation
+prompt learning可以用于自动评估生成的文本  
+
+### Multi-modal Learning
+采用固定的fixed-LM prompt tuning策略，结合prompt augmentation技术  
+为每个图像表示为一个embedding 并使用pre-trained LM，将其参数固定，使用prefix的方法进行prompt 最终生成文本(如图像标题)  
+在一些answered prompts的帮助下，系统可以快速学习新对象和新的视觉类别  
