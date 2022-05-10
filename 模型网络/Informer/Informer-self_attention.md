@@ -1,3 +1,14 @@
+- [Informer笔记](#informer笔记)
+  - [背景](#背景)
+  - [问题描述](#问题描述)
+  - [方法](#方法)
+    - [对self-attention机制的优化](#对self-attention机制的优化)
+      - [基本的self-attention机制](#基本的self-attention机制)
+      - [multi-head attention机制](#multi-head-attention机制)
+      - [Encoder输出作为attention作用于Decoder上时](#encoder输出作为attention作用于decoder上时)
+      - [优化方式](#优化方式)
+    - [Encoder](#encoder)
+    - [Decoder](#decoder)
 # Informer笔记
 
 ## 背景

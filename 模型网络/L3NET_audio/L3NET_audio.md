@@ -1,3 +1,17 @@
+- [LOOK, LISTEN, AND LEARN MORE DESIGN CHOICES FOR DEEP AUDIO EMBEDDINGS](#look-listen-and-learn-more-design-choices-for-deep-audio-embeddings)
+  - [ABSTRACT](#abstract)
+  - [INTRODUCTION](#introduction)
+  - [Look Listen And Learn(L3-Net)](#look-listen-and-learnl3-net)
+  - [Experiment Design](#experiment-design)
+    - [Deep audio embedding model](#deep-audio-embedding-model)
+    - [Downstream task：environmental sound classification](#downstream-taskenvironmental-sound-classification)
+    - [Methodology for comparing embeddings](#methodology-for-comparing-embeddings)
+  - [RESULTS](#results)
+    - [Input representation](#input-representation)
+    - [Training data domain and match to downstream tasks](#training-data-domain-and-match-to-downstream-tasks)
+    - [Amount of training data](#amount-of-training-data)
+    - [embedding type: L3-Net, SoundNet and VGGish](#embedding-type-l3-net-soundnet-and-vggish)
+  - [CONCLUSION](#conclusion)
 # LOOK, LISTEN, AND LEARN MORE DESIGN CHOICES FOR DEEP AUDIO EMBEDDINGS
 ## ABSTRACT
 当前在音频任务中，比较流行的模式是使用大量的音频数据集，训练一个能够完成audio-embedding任务的模型，之后再用浅层分类器，去进行后续任务。  
