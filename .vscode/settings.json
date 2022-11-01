@@ -3,5 +3,8 @@
         "activityBar.background": "#07342C",
         "titleBar.activeBackground": "#0A483D",
         "titleBar.activeForeground": "#EEFDFA"
-    }
+    },
+    "cSpell.words": [
+        "PANNs"
+    ]
 }
